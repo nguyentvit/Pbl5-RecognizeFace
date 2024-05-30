@@ -1,3 +1,5 @@
+import urllib.request
+
 import dlib
 import numpy as np
 import cv2
@@ -8,13 +10,13 @@ import logging
 import requests
 
 detector = dlib.get_frontal_face_detector()
-
+url = 'http://172.20.10.3/cam-hi.jpg'
 predictor = dlib.shape_predictor('data/data_dlib/shape_predictor_68_face_landmarks.dat')
 
 face_reco_model = dlib.face_recognition_model_v1("data/data_dlib/dlib_face_recognition_resnet_model_v1.dat")
-
-url_cam = 'http://172.20.10.3/cam-hi.jpg'
 url_server = 'http://localhost:5126/api/admin/Attendances'
+
+
 class Face_Recognizer:
     def __init__(self):
         self.font = cv2.FONT_ITALIC
@@ -52,7 +54,6 @@ class Face_Recognizer:
         self.face_id_list_known_list = []
 
         self.url = url_server
-        self.url_cam = url_cam
 
     def get_face_database(self):
         if os.path.exists("data/features_all.csv"):
@@ -130,7 +131,7 @@ class Face_Recognizer:
                                  1,
                                  cv2.LINE_AA)
 
-    def process(self, stream):
+    def process1(self, stream):
         if self.get_face_database():
             while stream.isOpened():
                 self.frame_cnt += 1
@@ -233,23 +234,20 @@ class Face_Recognizer:
                                 logging.debug("  Face recognition result: %s",
                                               self.face_name_known_list[similar_person_num])
                             else:
-                                logging.debug("  Face recognition result: unknown person")
+                                logging.debug("  Face recognition result: Unknown person")
 
-                        print(self.current_frame_face_name_list)
+
                         self.draw_note(img_rd)
 
                         # self.url là url của server nha lê đần
-                        for id in self.current_frame_face_name_list:
-                            if id != 'unknown' and len(self.current_frame_face_name_list) > 0:
-                                time_saved = int(time.time())
-                                data = {"status": False, "userId": id, "pathImg": time_saved}
-                                image_path = f"E:/Pbl5/Client/PBL5_INSOMNIA/Web/Img/{id}_{time_saved}.jpg"
-                                cv2.imwrite(image_path, img_rd)
-                                response = requests.post(self.url, json=data)
-                                if response.status_code == 201:
-                                    print("success")
-                                else:
-                                    print("error")
+                        # for id in self.current_frame_face_name_list:
+                        #     if id != 'unknown' and len(self.current_frame_face_name_list) > 0:
+                        #         data = {"status": True, "userId": id}
+                        #         response = requests.post(self.url, json=data)
+                        #         if response.status_code == 201:
+                        #             print("success")
+                        #         else:
+                        #             print("error")
 
                 if kk == ord('q'):
                     break
@@ -259,9 +257,146 @@ class Face_Recognizer:
                 cv2.imshow("camera", img_rd)
 
                 logging.debug("Frame ends\n\n")
+    def process(self, stream):
+        if self.get_face_database():
+            while stream.isOpened():
+                self.frame_cnt += 1
+                logging.debug("Frame " + str(self.frame_cnt) + " starts")
+                img_resp = urllib.request.urlopen(url)
+                img_array = np.array(bytearray(img_resp.read()), dtype=np.uint8)
+                frame = cv2.imdecode(img_array, -1)
+                gray_img = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                img_rd = frame
 
+                faces = detector(gray_img, 0)
+                kk = cv2.waitKey(1)
+                self.last_frame_face_cnt = self.current_frame_face_cnt
+                self.current_frame_face_cnt = len(faces)
+
+                self.last_frame_face_name_list = self.current_frame_face_name_list[:]
+
+                self.last_frame_face_centroid_list = self.current_frame_face_centroid_list
+                self.current_frame_face_centroid_list = []
+
+                if (self.current_frame_face_cnt == self.last_frame_face_cnt) and (
+                        self.reclassify_interval_cnt != self.reclassify_interval):
+                    logging.debug("scene 1: 当前帧和上一帧相比没有发生人脸数变化 / No face cnt changes in this frame!!!")
+
+                    self.current_frame_face_position_list = []
+
+                    if "unknown" in self.current_frame_face_name_list:
+                        logging.debug("  有未知人脸, 开始进行 reclassify_interval_cnt 计数")
+                        self.reclassify_interval_cnt += 1
+
+                    if self.current_frame_face_cnt != 0:
+                        for k, d in enumerate(faces):
+                            self.current_frame_face_position_list.append(tuple(
+                                [faces[k].left(), int(faces[k].bottom() + (faces[k].bottom() - faces[k].top()) / 4)]))
+                            self.current_frame_face_centroid_list.append(
+                                [int(faces[k].left() + faces[k].right()) / 2,
+                                 int(faces[k].top() + faces[k].bottom()) / 2])
+
+                            img_rd = cv2.rectangle(img_rd,
+                                                   tuple([d.left(), d.top()]),
+                                                   tuple([d.right(), d.bottom()]),
+                                                   (255, 255, 255), 2)
+
+                    if self.current_frame_face_cnt != 1:
+                        self.centroid_tracker()
+
+                    for i in range(self.current_frame_face_cnt):
+                        name = ""
+                        for employee in self.face_id_list_known_list:
+                            if employee['id'] == self.current_frame_face_name_list[i]:
+                                name = employee['name']
+                        img_rd = cv2.putText(img_rd, name,
+                                             self.current_frame_face_position_list[i], self.font, 0.8, (0, 255, 255), 1,
+                                             cv2.LINE_AA)
+                    self.draw_note(img_rd)
+
+                else:
+                    logging.debug("scene 2: 当前帧和上一帧相比人脸数发生变化 / Faces cnt changes in this frame")
+                    self.current_frame_face_position_list = []
+                    self.current_frame_face_X_e_distance_list = []
+                    self.current_frame_face_feature_list = []
+                    self.reclassify_interval_cnt = 0
+
+                    if self.current_frame_face_cnt == 0:
+                        logging.debug("  scene 2.1 人脸消失, 当前帧中没有人脸 / No faces in this frame!!!")
+                        self.current_frame_face_name_list = []
+                    else:
+                        logging.debug("  scene 2.2 出现人脸, 进行人脸识别 / Get faces in this frame and do face recognition")
+                        self.current_frame_face_name_list = []
+                        for i in range(len(faces)):
+                            shape = predictor(img_rd, faces[i])
+                            self.current_frame_face_feature_list.append(
+                                face_reco_model.compute_face_descriptor(img_rd, shape))
+                            self.current_frame_face_name_list.append("unknown")
+
+
+                        for k in range(len(faces)):
+                            logging.debug("  For face %d in current frame:", k + 1)
+                            self.current_frame_face_centroid_list.append(
+                                [int(faces[k].left() + faces[k].right()) / 2,
+                                 int(faces[k].top() + faces[k].bottom()) / 2])
+
+                            self.current_frame_face_X_e_distance_list = []
+
+                            self.current_frame_face_position_list.append(tuple(
+                                [faces[k].left(), int(faces[k].bottom() + (faces[k].bottom() - faces[k].top()) / 4)]))
+
+                            for i in range(len(self.face_features_known_list)):
+                                if str(self.face_features_known_list[i][0]) != '0.0':
+                                    e_distance_tmp = self.return_euclidean_distance(
+                                        self.current_frame_face_feature_list[k],
+                                        self.face_features_known_list[i])
+                                    logging.debug("      with person %d, the e-distance: %f", i + 1, e_distance_tmp)
+                                    self.current_frame_face_X_e_distance_list.append(e_distance_tmp)
+                                else:
+                                    self.current_frame_face_X_e_distance_list.append(999999999)
+
+                            similar_person_num = self.current_frame_face_X_e_distance_list.index(
+                                min(self.current_frame_face_X_e_distance_list))
+
+                            if min(self.current_frame_face_X_e_distance_list) < 0.4:
+                                self.current_frame_face_name_list[k] = self.face_name_known_list[similar_person_num]
+                                logging.debug("  Face recognition result: %s",
+                                              self.face_name_known_list[similar_person_num])
+                            else:
+                                logging.debug("  Face recognition result: Unknown person")
+
+                        self.draw_note(img_rd)
+                        # self.url là url của server nha lê đần
+                        # for id in self.current_frame_face_name_list:
+                        #     if id != 'unknown' and len(self.current_frame_face_name_list) > 0:
+                        #         data = {"status": True, "userId": id}
+                        #         response = requests.post(self.url, json=data)
+                        #         if response.status_code == 201:
+                        #             print("success")
+                        #         else:
+                        #             print("error")
+
+                if kk == ord('q'):
+                    break
+
+                self.update_fps()
+                cv2.namedWindow("camera", 1)
+                cv2.imshow("camera", img_rd)
+
+                logging.debug("Frame ends\n\n")
+    def open_video_capture(self, url):
+        try:
+            cap = cv2.VideoCapture(url)
+            if not cap.isOpened():
+                print("Error: Unable to open video capture.")
+                return False, None
+            return True, cap
+        except Exception as e:
+            print("Error:", e)
+            return False, None
     def run(self):
-        cap = cv2.VideoCapture(0)
+        # cap = cv2.VideoCapture(0)
+        cap = cv2.VideoCapture(url)
         self.process(cap)
 
         cap.release()

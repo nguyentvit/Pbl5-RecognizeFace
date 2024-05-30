@@ -1,3 +1,5 @@
+import urllib
+
 import dlib
 import numpy as np
 import cv2
@@ -13,7 +15,7 @@ predictor = dlib.shape_predictor('data/data_dlib/shape_predictor_68_face_landmar
 
 face_reco_model = dlib.face_recognition_model_v1("data/data_dlib/dlib_face_recognition_resnet_model_v1.dat")
 
-url_cam = 'http://172.20.10.3/cam-hi.jpg'
+url_cam = 'http://172.20.10.5/cam-hi.jpg'
 url_server = 'http://localhost:5126/api/admin/Attendances'
 class Face_Recognizer:
     def __init__(self):
@@ -135,10 +137,16 @@ class Face_Recognizer:
             while stream.isOpened():
                 self.frame_cnt += 1
                 logging.debug("Frame " + str(self.frame_cnt) + " starts")
-                flag, img_rd = stream.read()
+
+                img_resp = urllib.request.urlopen(self.url_cam)
+                img_array = np.array(bytearray(img_resp.read()), dtype=np.uint8)
+                frame = cv2.imdecode(img_array, -1)
+                gray_img = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                img_rd = frame
+
                 kk = cv2.waitKey(1)
 
-                faces = detector(img_rd, 0)
+                faces = detector(gray_img, 0)
 
                 self.last_frame_face_cnt = self.current_frame_face_cnt
                 self.current_frame_face_cnt = len(faces)
@@ -241,10 +249,7 @@ class Face_Recognizer:
                         # self.url là url của server nha lê đần
                         for id in self.current_frame_face_name_list:
                             if id != 'unknown' and len(self.current_frame_face_name_list) > 0:
-                                time_saved = int(time.time())
-                                data = {"status": False, "userId": id, "pathImg": time_saved}
-                                image_path = f"E:/Pbl5/Client/PBL5_INSOMNIA/Web/Img/{id}_{time_saved}.jpg"
-                                cv2.imwrite(image_path, img_rd)
+                                data = {"status": False, "userId": id}
                                 response = requests.post(self.url, json=data)
                                 if response.status_code == 201:
                                     print("success")
@@ -260,8 +265,19 @@ class Face_Recognizer:
 
                 logging.debug("Frame ends\n\n")
 
+    def open_video_capture(self, url):
+        try:
+            cap = cv2.VideoCapture(url)
+            if not cap.isOpened():
+                print("Error: Unable to open video capture.")
+                return False, None
+            return True, cap
+        except Exception as e:
+            print("Error:", e)
+            return False, None
+
     def run(self):
-        cap = cv2.VideoCapture(0)
+        cap = cv2.VideoCapture(self.url_cam)
         self.process(cap)
 
         cap.release()

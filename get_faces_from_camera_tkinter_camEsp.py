@@ -1,7 +1,6 @@
-import urllib
-
 import dlib
 import numpy as np
+import urllib.request
 import cv2
 import os
 import shutil
@@ -13,7 +12,7 @@ from PIL import Image, ImageTk
 from tkinter import ttk
 
 detector = dlib.get_frontal_face_detector()
-url = 'http://192.168.1.61/cam-hi.jpg'
+url = 'http://172.20.10.3/cam-hi.jpg'
 class Face_Register:
     def __init__(self):
         person_num_list_id = []
@@ -253,15 +252,14 @@ class Face_Register:
         # else:
         #     self.log_all["text"] = "Please run step 2!"
 
-    def get_frame(self):
+    def get_frame1(self):
         try:
             if self.cap.isOpened():
                 ret, frame = self.cap.read()
                 return ret, cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         except:
             print("Error: No video input!!!")
-
-    def get_frame_esp32(self):
+    def get_frame(self):
         try:
             img_resp = urllib.request.urlopen(url)
             img_array = np.array(bytearray(img_resp.read()), dtype=np.uint8)
