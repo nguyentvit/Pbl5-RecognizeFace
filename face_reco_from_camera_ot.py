@@ -14,7 +14,9 @@ predictor = dlib.shape_predictor('data/data_dlib/shape_predictor_68_face_landmar
 face_reco_model = dlib.face_recognition_model_v1("data/data_dlib/dlib_face_recognition_resnet_model_v1.dat")
 
 url_cam = 'http://172.20.10.3/cam-hi.jpg'
-url_server = 'http://localhost:5126/api/admin/Attendances'
+url_server = 'http://172.20.10.4:5126/api/admin/Attendances'
+
+
 class Face_Recognizer:
     def __init__(self):
         self.font = cv2.FONT_ITALIC
@@ -130,6 +132,18 @@ class Face_Recognizer:
                                  1,
                                  cv2.LINE_AA)
 
+    def clear_csv(self):
+        columns = ["Status", "id", "Time", "personName"]
+        pd.DataFrame(columns=columns).to_csv('dataRecognize.csv', mode='w', header=True, index=False)
+    def save_to_csv(self, data):
+        self.clear_csv()
+        columns = ["Status", "id", "Time", "personName"]
+        new_data = pd.DataFrame([data])
+        if os.path.exists('dataRecognize.csv'):
+            new_data.to_csv('dataRecognize.csv', mode='a', header=False, index=False)
+        else:
+            new_data.to_csv('dataRecognize.csv', mode='w', header=columns, index=False)
+
     def process(self, stream):
         if self.get_face_database():
             while stream.isOpened():
@@ -239,17 +253,32 @@ class Face_Recognizer:
                         self.draw_note(img_rd)
 
                         # self.url là url của server nha lê đần
+                        # for id in self.current_frame_face_name_list:
+                        #     if id != 'unknown' and len(self.current_frame_face_name_list) > 0:
+                        #         time_saved = int(time.time())
+                        #         data = {"status": False, "userId": id, "pathImg": time_saved}
+                        #         image_path = f"E:/Pbl5/Client/PBL5_INSOMNIA/Web/Img/{id}_{time_saved}.jpg"
+                        #         cv2.imwrite(image_path, img_rd)
+                        #         response = requests.post(self.url, json=data)
+                        #         if response.status_code == 201:
+                        #             print("success")
+                        #         else:
+                        #             print("error")
                         for id in self.current_frame_face_name_list:
                             if id != 'unknown' and len(self.current_frame_face_name_list) > 0:
                                 time_saved = int(time.time())
-                                data = {"status": False, "userId": id, "pathImg": time_saved}
-                                image_path = f"E:/Pbl5/Client/PBL5_INSOMNIA/Web/Img/{id}_{time_saved}.jpg"
-                                cv2.imwrite(image_path, img_rd)
-                                response = requests.post(self.url, json=data)
-                                if response.status_code == 201:
-                                    print("success")
-                                else:
-                                    print("error")
+                                data = {"Status": False, "id": id, "Time": time_saved, "personName": "TranVanNguyen"}
+                                self.save_to_csv(data)
+
+                        # server
+                        # @app.route('/')
+                        # def home():
+                        #     for id in self.current_frame_face_name_list:
+                        #         if id != 'unknown' and len(self.current_frame_face_name_list) > 0:
+                        #             return "Nhan dien thanh cong"
+                        #         else:
+                        #             return "Nhan dien khong thanh cong"
+
 
                 if kk == ord('q'):
                     break
@@ -269,6 +298,7 @@ class Face_Recognizer:
 
 
 def main():
+
     logging.basicConfig(level=logging.INFO)
     Face_Recognizer_con = Face_Recognizer()
     Face_Recognizer_con.run()
@@ -276,3 +306,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

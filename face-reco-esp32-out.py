@@ -15,8 +15,8 @@ predictor = dlib.shape_predictor('data/data_dlib/shape_predictor_68_face_landmar
 
 face_reco_model = dlib.face_recognition_model_v1("data/data_dlib/dlib_face_recognition_resnet_model_v1.dat")
 
-url_cam = 'http://172.20.10.5/cam-hi.jpg'
-url_server = 'http://localhost:5126/api/admin/Attendances'
+url_cam = 'http://172.20.10.6/cam-hi.jpg'
+url_server = 'http://192.168.43.9:5126/api/admin/Attendances'
 class Face_Recognizer:
     def __init__(self):
         self.font = cv2.FONT_ITALIC
@@ -247,14 +247,14 @@ class Face_Recognizer:
                         self.draw_note(img_rd)
 
                         # self.url là url của server nha lê đần
-                        for id in self.current_frame_face_name_list:
-                            if id != 'unknown' and len(self.current_frame_face_name_list) > 0:
-                                data = {"status": False, "userId": id}
-                                response = requests.post(self.url, json=data)
-                                if response.status_code == 201:
-                                    print("success")
-                                else:
-                                    print("error")
+                        # for id in self.current_frame_face_name_list:
+                        #     if id != 'unknown' and len(self.current_frame_face_name_list) > 0:
+                        #         data = {"status": False, "userId": id}
+                        #         response = requests.post(self.url, json=data)
+                        #         if response.status_code == 201:
+                        #             print("success")
+                        #         else:
+                        #             print("error")
 
                 if kk == ord('q'):
                     break

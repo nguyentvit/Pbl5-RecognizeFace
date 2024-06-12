@@ -15,8 +15,8 @@ predictor = dlib.shape_predictor('data/data_dlib/shape_predictor_68_face_landmar
 
 face_reco_model = dlib.face_recognition_model_v1("data/data_dlib/dlib_face_recognition_resnet_model_v1.dat")
 
-url_cam = 'http://172.20.10.6/cam-hi.jpg'
-url_server = 'http://172.20.10.4:5126/api/admin/Attendances'
+url_cam = 'http://192.168.43.10/cam-hi.jpg'
+url_server = 'http://192.168.43.9:5126/api/admin/Attendances'
 class Face_Recognizer:
     def __init__(self):
         self.font = cv2.FONT_ITALIC
