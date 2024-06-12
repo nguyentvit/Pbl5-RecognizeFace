@@ -37,7 +37,7 @@ class Face_Register:
         self.ss_cnt = 0
 
         self.win = tk.Tk()
-        self.win.title("Face Register @coneypo")
+        self.win.title("Face Register ")
 
         self.win.geometry("1300x550")
 
@@ -78,7 +78,7 @@ class Face_Register:
 
         self.frame_time = 0
         self.frame_start_time = 0
-        self.fps = 0
+        self.fps = 0  
         self.fps_show = 0
         self.start_time = time.time()
 

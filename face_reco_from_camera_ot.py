@@ -239,17 +239,17 @@ class Face_Recognizer:
                         self.draw_note(img_rd)
 
                         # self.url là url của server nha lê đần
-                        for id in self.current_frame_face_name_list:
-                            if id != 'unknown' and len(self.current_frame_face_name_list) > 0:
-                                time_saved = int(time.time())
-                                data = {"status": False, "userId": id, "pathImg": time_saved}
-                                image_path = f"E:/Pbl5/Client/PBL5_INSOMNIA/Web/Img/{id}_{time_saved}.jpg"
-                                cv2.imwrite(image_path, img_rd)
-                                response = requests.post(self.url, json=data)
-                                if response.status_code == 201:
-                                    print("success")
-                                else:
-                                    print("error")
+                        # for id in self.current_frame_face_name_list:
+                        #     if id != 'unknown' and len(self.current_frame_face_name_list) > 0:
+                        #         time_saved = int(time.time())
+                        #         data = {"status": False, "userId": id, "pathImg": time_saved}
+                        #         image_path = f"E:/Pbl5/Client/PBL5_INSOMNIA/Web/Img/{id}_{time_saved}.jpg"
+                        #         cv2.imwrite(image_path, img_rd)
+                        #         response = requests.post(self.url, json=data)
+                        #         if response.status_code == 201:
+                        #             print("success")
+                        #         else:
+                        #             print("error")
 
                 if kk == ord('q'):
                     break
