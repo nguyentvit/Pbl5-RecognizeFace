@@ -17,7 +17,6 @@ predictor = dlib.shape_predictor('../testTrainModelDlib/predictor.dat')
 face_reco_model = dlib.face_recognition_model_v1("data/data_dlib/dlib_face_recognition_resnet_model_v1.dat")
 
 url_cam = 'http://172.20.10.3/cam-hi.jpg'
-url_server = 'http://172.20.10.4:5126/api/admin/Attendances'
 
 
 #
@@ -67,8 +66,6 @@ class Face_Recognizer:
         self.reclassify_interval = 10
 
         self.face_id_list_known_list = []
-
-        self.url = url_server
         self.url_cam = url_cam
 
     def get_face_database(self):
@@ -148,11 +145,11 @@ class Face_Recognizer:
                                  cv2.LINE_AA)
 
     def clear_csv(self):
-        columns = ["Status", "id", "Time", "personName"]
+        columns = ["Status", "Id", "Time", "PersonName", "StatusRecognized", "Img_Path"]
         pd.DataFrame(columns=columns).to_csv('dataRecognize.csv', mode='w', header=True, index=False)
     def save_to_csv(self, data):
         self.clear_csv()
-        columns = ["Status", "id", "Time", "personName"]
+        columns = ["Status", "Id", "Time", "PersonName", "StatusRecognized", "Img_Path"]
         new_data = pd.DataFrame([data])
         if os.path.exists('dataRecognize.csv'):
             new_data.to_csv('dataRecognize.csv', mode='a', header=False, index=False)
@@ -319,32 +316,18 @@ class Face_Recognizer:
                             print(self.current_frame_face_name_list)
                             self.draw_note(img_rd)
 
-                            # self.url là url của server nha lê đần
-                            # for id in self.current_frame_face_name_list:
-                            #     if id != 'unknown' and len(self.current_frame_face_name_list) > 0:
-                            #         time_saved = int(time.time())
-                            #         data = {"status": False, "userId": id, "pathImg": time_saved}
-                            #         image_path = f"E:/Pbl5/Client/PBL5_INSOMNIA/Web/Img/{id}_{time_saved}.jpg"
-                            #         cv2.imwrite(image_path, img_rd)
-                            #         response = requests.post(self.url, json=data)
-                            #         if response.status_code == 201:
-                            #             print("success")
-                            #         else:
-                            #             print("error")
                             for id in self.current_frame_face_name_list:
                                 if id != 'unknown' and len(self.current_frame_face_name_list) > 0:
+                                    for i in range(self.current_frame_face_cnt):
+                                        name = "unknown"
+                                        for employee in self.face_id_list_known_list:
+                                            if employee['id'] == self.current_frame_face_name_list[i]:
+                                                name = employee['name']
                                     time_saved = int(time.time())
-                                    data = {"Status": False, "id": id, "Time": time_saved, "personName": "TranVanNguyen"}
+                                    img_path = f"E:/Pbl5/Client/PBL5_INSOMNIA/Web/Img/{id}_{time_saved}.jpg"
+                                    cv2.imwrite(img_path, img_rd)
+                                    data = {"Status": False, "Id": id, "Time": time_saved, "PersonName": name, "StatusRecognized": True, "Img_Path": time_saved}
                                     self.save_to_csv(data)
-
-                            # server
-                            # @app.route('/')
-                            # def home():
-                            #     for id in self.current_frame_face_name_list:
-                            #         if id != 'unknown' and len(self.current_frame_face_name_list) > 0:
-                            #             return "Nhan dien thanh cong"
-                            #         else:
-                            #             return "Nhan dien khong thanh cong"
 
                 if kk == ord('q'):
                     break

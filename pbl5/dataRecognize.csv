@@ -1,2 +1,2 @@
-Status,id,Time,personName
-False,58c120b5-2d61-44d4-82c7-08dc7d463384,1718293057,TranVanNguyen
+Status,Id,Time,PersonName,StatusRecognized,Img_Path
+False,58c120b5-2d61-44d4-82c7-08dc7d463384,1718297934,VanNguyen,True,1718297934
