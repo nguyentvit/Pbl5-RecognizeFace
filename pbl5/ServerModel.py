@@ -10,6 +10,8 @@ def homeIn():
     try:
         # Đọc file CSV
         df = pd.read_csv('dataRecognizeIn.csv')
+
+        # test
         # Lấy dữ liệu của hàng đầu tiên
         first_row = df.iloc[0].to_dict()
         file_time = datetime.fromtimestamp(int(first_row['Time']))
