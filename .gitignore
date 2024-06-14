@@ -1,0 +1,7 @@
+/.idea/
+/.venv/
+/liveness/dataset/
+/liveness/videos/fake/
+/liveness/videos/real/
+/testTrainModelDlib/ibug_300W_large_face_landmark_dataset/
+/pbl5/data/data_faces_from_camera/
